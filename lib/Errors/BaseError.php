@@ -13,7 +13,7 @@ class BaseError extends Exception
 
     if (!$response) {
         $this->errors = array();
-        $msg = 'Unknown error';
+        $msg = sprintf('Unknown error (http code %s)', $this->httpStatusCode);
     } else {
         $this->errors = array_map(function($data){ return $data['error'];  }, $response['errors']);
 

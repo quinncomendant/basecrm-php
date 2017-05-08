@@ -4,8 +4,8 @@ namespace BaseCRM;
 class HttpClient
 {
 
-  const API_VERSION_PREFIX = "/v2"; 
-    
+  const API_VERSION_PREFIX = "/v2";
+
   // @ignore
   protected $config;
 
@@ -13,7 +13,7 @@ class HttpClient
   {
     $this->config = $config;
   }
-  
+
   /**
    * Perform a GET request
    *
@@ -136,12 +136,14 @@ class HttpClient
     curl_setopt($curl, CURLOPT_HTTPHEADER, $rawHeaders);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+    $payload = null;
     if ($body && in_array($method, ['post', 'put', 'patch']))
     {
       $envelope = $raw ? $body : $this->wrapEnvelope($body);
       $payload = json_encode($this->encodePayload($envelope));
       curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
     }
+    logMsg(sprintf('Sending BaseCRM %s request: %s %s', strtoupper($method), $url, $payload), LOG_DEBUG, __FILE__, __LINE__);
     $resp = curl_exec($curl);
 
     if ($resp === false)
@@ -161,7 +163,7 @@ class HttpClient
     {
       $decodedResponse = $this->handleResponse($code, $resp);
       $resource = $raw ? $decodedResponse : $this->unwrapEnvelope($decodedResponse);
-    }    
+    }
     return array($code, $resource);
   }
 
@@ -180,7 +182,7 @@ class HttpClient
 
   /**
    * Perform envelope unwrapping
-   * 
+   *
    * @param array $body Associative array after json decoding.
    * @return mixed Either single resource or array of associative resources.
    *
@@ -220,11 +222,11 @@ class HttpClient
     {
       if (is_array($value))                 $encoded[$key] = $this->encodePayload($value);
       else if ($value instanceof \DateTime) $encoded[$key] = $value->format(\DateTime::ISO8601);
-      else                                  $encoded[$key] = $value;
+      else                                  $encoded[$key] = utf8_encode($value);
     }
 
     return $encoded;
-  } 
+  }
 
   /**
    * Ensure consistency in encoding between native PHP types and Base API expected query type format.
@@ -246,7 +248,7 @@ class HttpClient
     }
 
     return $encoded;
-  } 
+  }
 
 
   /**
@@ -257,13 +259,13 @@ class HttpClient
    * @throws \BaseCRM\Errors\ResourceError if request's payload validation failed
    * @throws \BaseCRM\Errors\ServerError if server error occurred
    *
-   * @return mixed Decoded response 
+   * @return mixed Decoded response
    *
    * @ignore
    */
   protected function handleResponse($code, $rawResponse)
   {
-    try 
+    try
     {
       $response = json_decode($rawResponse, true);
     }
