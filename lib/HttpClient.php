@@ -222,7 +222,13 @@ class HttpClient
     {
       if (is_array($value))                 $encoded[$key] = $this->encodePayload($value);
       else if ($value instanceof \DateTime) $encoded[$key] = $value->format(\DateTime::ISO8601);
-      else                                  $encoded[$key] = utf8_encode($value);
+      else {
+        if (is_string($value) && mb_detect_encoding($value, 'UTF-8', true) != 'UTF-8') {
+          $encoded[$key] = utf8_encode($value);
+        } else {
+          $encoded[$key] = $value;
+        }
+      }
     }
 
     return $encoded;
